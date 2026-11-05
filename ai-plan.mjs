@@ -10,3 +10,18 @@ export function planCampaign({month,count,services,brief,mode,referencePath='',f
    prompt:`${brief.trim()}\nServiço: ${service}. Tema desta variação: ${theme}. Variação ${i+1} de ${count}: crie uma cena diferente das outras, com outro enquadramento e composição.`,format,imagePath:null,requestId:null};
  });
 }
+
+// Refresh campaign entries without duplicating dates or touching unrelated posts.
+export function mergeCampaignPosts(posts,campaign){
+ const result=structuredClone(posts);
+ for(const item of campaign.items){
+  const id='ai-'+campaign.id+'-'+item.id,index=result.findIndex(p=>p.id===id);
+  const post={...(index>=0?result[index]:{}),id,date:item.date,type:'Foto',title:item.title,caption:item.caption,imagePath:item.imagePath||null};
+  if(index<0)result.push(post);else result[index]=post;
+ }
+ return result;
+}
+export function campaignCsv(campaign){
+ const cell=value=>'"'+String(value??'').replace(/^[=+@\-\t\r]/,"'$&").replaceAll('"','""')+'"';
+ return [['Data','Serviço','Título','Legenda','Descrição da imagem','Imagem gerada'],...campaign.items.map(i=>[i.date,i.service,i.title,i.caption,i.prompt,i.imagePath?'Sim':'Não'])].map(row=>row.map(cell).join(';')).join('\r\n');
+}

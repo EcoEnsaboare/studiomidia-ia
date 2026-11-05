@@ -1,4 +1,4 @@
-import {planCampaign} from './ai-plan.mjs';
+import {planCampaign,mergeCampaignPosts,campaignCsv} from './ai-plan.mjs';
 const $=id=>document.getElementById(id),cloud=window.StudioCloud;
 let enabled=false,busy=false,campaign=null;
 const errors={AI_NOT_CONFIGURED:'A geração ainda aguarda ativação da conta de IA. Nenhuma imagem foi cobrada.',AI_NOT_ENABLED:'A geração ainda não está liberada para esta empresa.',AI_DAILY_LIMIT:'O limite diário desta empresa foi atingido.',AI_BUSY:'Já existe uma geração em andamento. Aguarde antes de solicitar outra.',AI_DUPLICATE_REQUEST:'Esta solicitação já foi recebida. Use Verificar resultado para não gerar outra cobrança.',PROVIDER_TIMEOUT:'A IA demorou a responder. Use Verificar resultado antes de solicitar outra imagem. Pode haver consumo na conta de IA.',PROVIDER_ACCESS_DENIED:'A conta de IA precisa de chave válida ou permissão para gerar imagens.',PROVIDER_LIMIT:'A conta de IA atingiu um limite ou está sem saldo.',INVALID_REFERENCE:'Envie uma imagem PNG, JPEG ou WebP de até 3 MB.',REFERENCE_UNAVAILABLE:'A referência não está disponível. Crie um novo planejamento com o arquivo.',CONNECTION_FAILED:'A conexão falhou. Se a geração já foi enviada, use Verificar resultado antes de tentar de novo.',SERVER_FAILED:'Não foi possível concluir. Use Verificar resultado antes de solicitar outra geração.',ACCESS_DENIED:'Sua conta não tem permissão para gerar nesta empresa.'};
@@ -28,13 +28,29 @@ function renderCampaignList(){
 function render(){
  const container=$('ai-results');container.replaceChildren();if(!campaign)return;
  const heading=element('h3',campaign.title);container.append(heading,element('p','Planejamento guiado. Cada botão Gerar imagem solicita uma nova criação à IA. Os textos abaixo são editáveis e ainda não são legendas geradas por IA.','hint'));
+ const tools=element('div',null,'ai-tools');
+ const all=button('Planejar campanha inteira no calendário',async()=>{
+  if(busy)return;busy=true;render();
+  try{await cloud.flush();const posts=mergeCampaignPosts(cloud.read('sm_posts',[]),campaign);
+   if(!await cloud.write('sm_posts',posts))throw new Error('SAVE_FAILED');
+   window.dispatchEvent(new Event('studio-posts-updated'));setStatus('Campanha atualizada no calendário para revisão. Nenhuma publicação foi enviada às redes sociais.');
+  }catch(e){setStatus(explain(e));}finally{busy=false;render();}
+ });all.disabled=busy;
+ const csv=button('Baixar planejamento CSV',()=>{
+  const blob=new Blob(['\uFEFF'+campaignCsv(campaign)],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=element('a');
+  a.href=url;a.download='planejamento-'+campaign.id+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ });tools.append(all,csv);container.append(tools);
  for(const item of campaign.items){
   const card=element('article',null,'ai-card');card.append(element('small',item.date.split('-').reverse().join('/')+' • '+item.service));
   const title=element('input');title.value=item.title;title.maxLength=100;title.setAttribute('aria-label','Título da arte');title.disabled=busy;
   const prompt=element('textarea');prompt.value=item.prompt;prompt.rows=3;prompt.maxLength=2500;prompt.setAttribute('aria-label','Descrição para a IA');prompt.disabled=busy;
   title.onchange=async()=>{item.title=title.value;try{await saveCampaign();}catch(e){setStatus(explain(e));}};
   prompt.onchange=async()=>{item.prompt=prompt.value;try{await saveCampaign();}catch(e){setStatus(explain(e));}};
-  card.append(title,prompt);
+  const date=element('input');date.type='date';date.value=item.date;date.setAttribute('aria-label','Data planejada');date.disabled=busy;
+  const caption=element('textarea');caption.value=item.caption;caption.rows=3;caption.maxLength=2200;caption.setAttribute('aria-label','Legenda da publicação');caption.disabled=busy;
+  date.onchange=async()=>{if(!date.value)return;item.date=date.value;try{await saveCampaign();}catch(e){setStatus(explain(e));}};
+  caption.onchange=async()=>{item.caption=caption.value;try{await saveCampaign();}catch(e){setStatus(explain(e));}};
+  card.append(element('label','Data planejada'),date,element('label','Título da arte'),title,element('label','Descrição para criar a imagem'),prompt,element('label','Legenda da publicação'),caption);
   if(item.imagePath||item.previousImagePath){
    const visiblePath=item.imagePath||item.previousImagePath;
    const img=element('img');img.alt='Cena original gerada por IA: '+item.title;img.loading='lazy';
@@ -45,10 +61,8 @@ function render(){
   const generate=button(item.imagePath?'Gerar outra imagem':'Gerar imagem',()=>generateItem(item));generate.disabled=!enabled||busy;card.append(generate);
   if(item.requestId&&!item.imagePath){const recover=button('Verificar resultado',()=>recoverItem(item));recover.disabled=busy;card.append(recover);}
   const calendar=button('Planejar no calendário',async()=>{
-   await cloud.flush();const posts=cloud.read('sm_posts',[]),id='ai-'+campaign.id+'-'+item.id;
-   if(posts.some(p=>p.id===id)){setStatus('Este item já está no calendário.');return;}
-   posts.push({id,date:item.date,type:'Foto',title:item.title,caption:item.caption,imagePath:item.imagePath});
-   if(await cloud.write('sm_posts',posts)){window.dispatchEvent(new Event('studio-posts-updated'));setStatus('Adicionado ao calendário para revisão. Isso não publica nas redes sociais.');}
+   await cloud.flush();const posts=mergeCampaignPosts(cloud.read('sm_posts',[]),{...campaign,items:[item]});
+   if(await cloud.write('sm_posts',posts)){window.dispatchEvent(new Event('studio-posts-updated'));setStatus('Item atualizado no calendário para revisão. Isso não publica nas redes sociais.');}
   });calendar.disabled=busy;card.append(calendar);container.append(card);
  }
 }
