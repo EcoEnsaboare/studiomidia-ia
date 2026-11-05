@@ -52,3 +52,8 @@ test('description uses image understanding separately and requires consent, memb
  for(const extra of [{consent:'false'},{referencePath:U+'/references/x.png'},{referencePath:''}]){const h=harness();assert.equal((await h.handler(req({action:'describe-reference',referencePath:W+'/references/model.png',...extra}))).status,400);assert.equal(h.calls.provider.length,0);}
  const denied=harness({role:'viewer'});assert.equal((await denied.handler(req({action:'describe-reference'}))).status,403);
 });
+
+test('status identifies missing configuration without returning credentials',async()=>{
+ const h=harness({ready:false});const request=new Request('https://function.example.test?workspace='+W,{headers:{Authorization:'Bearer test-token'}});
+ const result=await h.handler(request),data=await result.json();assert.deepEqual(data.missingConfiguration,['OPENAI_API_KEY']);assert.equal(data.enabled,false);assert.ok(!JSON.stringify(data).includes('TEST_KEY'));assert.equal(h.calls.provider.length,0);
+});

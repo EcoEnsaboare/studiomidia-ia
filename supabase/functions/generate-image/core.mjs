@@ -48,9 +48,10 @@ export function createHandler({createClient,env,fetcher=fetch,now=()=>new Date()
    if(member.error||!member.data||!['owner','editor'].includes(member.data.role))return response({error:'ACCESS_DENIED'},403);
    const config=await userClient.from('sm_ai_access').select('enabled,daily_limit').eq('workspace_id',workspace).maybeSingle();
    if(config.error)return response({error:'DATABASE_UNAVAILABLE'},503);
-   const ready=Boolean(env('OPENAI_API_KEY'))&&env('STUDIO_AI_ENABLED')==='true';
+   const keyPresent=Boolean(env('OPENAI_API_KEY')?.trim()),activationEnabled=env('STUDIO_AI_ENABLED')?.trim().toLowerCase()==='true';
+   const ready=keyPresent&&activationEnabled;
    const enabled=Boolean(config.data?.enabled);
-   if(req.method==='GET')return response({configured:ready,enabled:ready&&enabled,dailyLimit:config.data?.daily_limit||5,model:'gpt-image-2.5-flare',quality:'medium'});
+   if(req.method==='GET')return response({configured:ready,enabled:ready&&enabled,missingConfiguration:[...(!keyPresent?['OPENAI_API_KEY']:[]),...(!activationEnabled?['STUDIO_AI_ENABLED']:[])],dailyLimit:config.data?.daily_limit||5,model:'gpt-image-2.5-flare',quality:'medium'});
    const action=form.get('action');
    const storage=admin.storage.from('sm-ai-images');
    if(action==='upload-reference'){

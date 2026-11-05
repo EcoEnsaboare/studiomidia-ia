@@ -5,7 +5,7 @@ const errors={BRIEF_DAILY_LIMIT:'O limite de 1 análise de referência por dia f
 function explain(e){return errors[e.message]||'Não foi possível concluir esta ação. Confira sua conexão e tente novamente.';}
 function setStatus(text){$('ai-status').textContent=text;}
 async function refreshStatus(){
- try{const data=await cloud.aiStatus();enabled=data.enabled;$('ai-availability').textContent=enabled?`Geração ativada • limite de ${data.dailyLimit} solicitações por dia`:'Aguardando ativação da conta de IA. Você já pode preparar e salvar seu planejamento.';}
+ try{const data=await cloud.aiStatus();enabled=data.enabled;$('ai-availability').textContent=enabled?`Geração ativada • limite de ${data.dailyLimit} solicitações por dia`:data.missingConfiguration?.length?'Configuração pendente no Supabase: '+data.missingConfiguration.join(' e ')+'. Abra Secrets, confira os nomes e valores e depois clique em Atualizar status.':!data.configured?'Aguardando configuração da IA no servidor.':'A geração não está liberada para esta empresa.';}
  catch{enabled=false;$('ai-availability').textContent='Não foi possível consultar a disponibilidade da IA. O planejamento continua disponível.';}
  if(campaign)render();
 }
