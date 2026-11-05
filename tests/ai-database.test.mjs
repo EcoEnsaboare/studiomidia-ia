@@ -11,8 +11,10 @@ test('AI database prevents self-activation, duplicates, cross-tenant calls and e
   await db.exec(readFileSync(new URL('../database/ai_generation.sql',import.meta.url),'utf8'));
   await db.exec(readFileSync(new URL('../database/ai_briefs.sql',import.meta.url),'utf8'));
   await db.exec(readFileSync(new URL('../database/ai_captions.sql',import.meta.url),'utf8'));
+  await db.exec(readFileSync(new URL('../database/social_publishing.sql',import.meta.url),'utf8'));
   await db.exec(`set role authenticated;set request.jwt.claim.sub='${A}';`);
   const workspace=(await db.query("select public.sm_ensure_workspace('A') as id")).rows[0].id;
+  await assert.rejects(()=>db.query('select public.sm_social_reserve($1,$2,$3)',[workspace,A,'item']),/permission denied/);
   await assert.rejects(()=>db.query('select public.sm_ai_reserve($1,$2,$3)',[workspace,A,crypto.randomUUID()]),/permission denied/);
   await assert.rejects(()=>db.query('insert into public.sm_ai_access values($1,true,30)',[workspace]),/permission denied/);
   await db.exec('reset role;');
@@ -23,6 +25,10 @@ test('AI database prevents self-activation, duplicates, cross-tenant calls and e
   await assert.rejects(()=>db.query('select public.sm_ai_reserve($1,$2,$3)',[workspace,B,crypto.randomUUID()]),/AI_ACCESS_DENIED/);
   await db.query('select public.sm_ai_reserve_brief($1,$2,$3)',[workspace,A,crypto.randomUUID()]);
   await assert.rejects(()=>db.query('select public.sm_ai_reserve_brief($1,$2,$3)',[workspace,A,crypto.randomUUID()]),/BRIEF_DAILY_LIMIT/);
+  await db.query('insert into public.sm_social_accounts values($1,$2,$3,true)',[workspace,'instagram-account','ecoensaboare']);
+  await db.query('select public.sm_social_reserve($1,$2,$3)',[workspace,A,'item']);
+  await assert.rejects(()=>db.query('select public.sm_social_reserve($1,$2,$3)',[workspace,A,'item']),/SOCIAL_ALREADY_SUBMITTED/);
+  await assert.rejects(()=>db.query('select public.sm_social_reserve($1,$2,$3)',[workspace,B,'other']),/ACCESS_DENIED/);
   const request=crypto.randomUUID(),job=(await db.query('select public.sm_ai_reserve($1,$2,$3) as id',[workspace,A,request])).rows[0].id;
   await assert.rejects(()=>db.query('select public.sm_ai_reserve($1,$2,$3)',[workspace,A,request]),/AI_DUPLICATE_REQUEST/);
   await assert.rejects(()=>db.query('select public.sm_ai_reserve($1,$2,$3)',[workspace,A,crypto.randomUUID()]),/AI_BUSY/);

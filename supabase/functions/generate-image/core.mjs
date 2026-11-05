@@ -1,3 +1,4 @@
+import {handleSocial} from './social.mjs';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SIZES=new Set(['1024x1024','1024x1536','1536x1024']);
 export function allowedOrigin(origin){return !origin||origin==='https://ecoensaboare.netlify.app'||/^https:\/\/deploy-preview-\d+--ecoensaboare\.netlify\.app$/.test(origin);}
@@ -53,6 +54,7 @@ export function createHandler({createClient,env,fetcher=fetch,now=()=>new Date()
    const enabled=Boolean(config.data?.enabled);
    if(req.method==='GET')return response({configured:ready,enabled:ready&&enabled,missingConfiguration:[...(!keyPresent?['OPENAI_API_KEY']:[]),...(!activationEnabled?['STUDIO_AI_ENABLED']:[])],dailyLimit:config.data?.daily_limit||5,model:'gpt-image-2.5-flare',quality:'medium'});
    const action=form.get('action');
+   if(['social-status','publish-instagram'].includes(action)){const result=await handleSocial({workspace,user,userClient,admin,form,env,fetcher});return response(result.data,result.status);}
    const storage=admin.storage.from('sm-ai-images');
    if(action==='upload-reference'){
     const file=form.get('reference');if(!file||typeof file==='string'||file.size>3_000_000||file.size===0)return response({error:'INVALID_REFERENCE'},400);
