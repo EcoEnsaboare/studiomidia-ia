@@ -1,3 +1,13 @@
+# Etapa 1 em preparação — Login e nuvem
+
+Esta branch contém a integração Supabase da versão 1.1.0. Ainda não está ativada em produção. Consulte [AUTH_SETUP.md](AUTH_SETUP.md) para configuração e validação de aceite.
+
+Testes locais: `npm test` (inclui isolamento entre empresas em PostgreSQL/PGlite). Build: `npm run build`, com as duas variáveis públicas configuradas. Dependências têm versões fixas e lockfile.
+
+---
+
+## Histórico do piloto local
+
 # StudioMídia — Plataforma de marketing (MVP piloto)
 
 Protótipo funcional para a Eco Ensaboare, preparado para evoluir para uma plataforma multiempresa.
@@ -47,3 +57,4 @@ O projeto não envia arquivos para serviços externos por conta própria. Os reg
 - Controle de velocidade e visualização da lista de clipes.
 - Nova seção de ideias e legendas com modelos de texto locais, edição, cópia e envio ao calendário.
 - Não inclui geração real por IA, voz neural, MP4 ou publicação automática.
+
