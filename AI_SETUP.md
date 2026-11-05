@@ -28,3 +28,6 @@ Aviso existente do Supabase Auth: proteção contra senhas vazadas desativada. R
 ## Limitações
 
 Geração de imagens, não de vídeo. Legendas desta tela são modelos locais editáveis. O calendário é planejamento para revisão e não agenda nem publica nas redes sociais. O custo final do provedor varia; a quota de solicitações não é um teto monetário garantido. Não há geração em lote paga ao abrir ou preparar uma campanha.
+
+## Descrição pela referência (v1.2.2)
+Botão explícito com confirmação de custo; Responses API gpt-4.1-mini, store=false, saída limitada a 450 tokens. Limite separado de 1 análise/dia por empresa (inclusive falhas), reservado atomicamente antes da API. A análise não consome a cota de imagens. Não executada automaticamente ao carregar um arquivo; o texto é editável antes de salvar. Não foi feito teste pago de análise nesta publicação.

@@ -1,6 +1,6 @@
 import { build } from 'esbuild';
 import { mkdirSync, cpSync, readFileSync, writeFileSync } from 'node:fs';
-const version = '1.2.1';
+const version = '1.2.2';
 const commit = (process.env.COMMIT_REF || 'local').slice(0, 7);
 const deploy = (process.env.DEPLOY_ID || 'local').slice(-8);
 const date = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });

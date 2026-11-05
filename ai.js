@@ -1,7 +1,7 @@
 import {planCampaign,mergeCampaignPosts,campaignCsv} from './ai-plan.mjs';
 const $=id=>document.getElementById(id),cloud=window.StudioCloud;
-let enabled=false,busy=false,campaign=null;
-const errors={AI_NOT_CONFIGURED:'A geração ainda aguarda ativação da conta de IA. Nenhuma imagem foi cobrada.',AI_NOT_ENABLED:'A geração ainda não está liberada para esta empresa.',AI_DAILY_LIMIT:'O limite diário desta empresa foi atingido.',AI_BUSY:'Já existe uma geração em andamento. Aguarde antes de solicitar outra.',AI_DUPLICATE_REQUEST:'Esta solicitação já foi recebida. Use Verificar resultado para não gerar outra cobrança.',PROVIDER_TIMEOUT:'A IA demorou a responder. Use Verificar resultado antes de solicitar outra imagem. Pode haver consumo na conta de IA.',PROVIDER_ACCESS_DENIED:'A conta de IA precisa de chave válida ou permissão para gerar imagens.',PROVIDER_LIMIT:'A conta de IA atingiu um limite ou está sem saldo.',INVALID_REFERENCE:'Envie uma imagem PNG, JPEG ou WebP de até 3 MB.',REFERENCE_UNAVAILABLE:'A referência não está disponível. Crie um novo planejamento com o arquivo.',CONNECTION_FAILED:'A conexão falhou. Se a geração já foi enviada, use Verificar resultado antes de tentar de novo.',SERVER_FAILED:'Não foi possível concluir. Use Verificar resultado antes de solicitar outra geração.',ACCESS_DENIED:'Sua conta não tem permissão para gerar nesta empresa.'};
+let enabled=false,busy=false,campaign=null,referenceFile=null,referencePathCache='',referencePreview='';
+const errors={BRIEF_DAILY_LIMIT:'O limite de 1 análise de referência por dia foi atingido. Você pode editar o texto manualmente e gerar sua imagem.',AI_NOT_CONFIGURED:'A geração ainda aguarda ativação da conta de IA. Nenhuma imagem foi cobrada.',AI_NOT_ENABLED:'A geração ainda não está liberada para esta empresa.',AI_DAILY_LIMIT:'O limite diário desta empresa foi atingido.',AI_BUSY:'Já existe uma geração em andamento. Aguarde antes de solicitar outra.',AI_DUPLICATE_REQUEST:'Esta solicitação já foi recebida. Use Verificar resultado para não gerar outra cobrança.',PROVIDER_TIMEOUT:'A IA demorou a responder. Use Verificar resultado antes de solicitar outra imagem. Pode haver consumo na conta de IA.',PROVIDER_ACCESS_DENIED:'A conta de IA precisa de chave válida ou permissão para gerar imagens.',PROVIDER_LIMIT:'A conta de IA atingiu um limite ou está sem saldo.',INVALID_REFERENCE:'Envie uma imagem PNG, JPEG ou WebP de até 3 MB.',REFERENCE_UNAVAILABLE:'A referência não está disponível. Crie um novo planejamento com o arquivo.',CONNECTION_FAILED:'A conexão falhou. Se a geração já foi enviada, use Verificar resultado antes de tentar de novo.',SERVER_FAILED:'Não foi possível concluir. Use Verificar resultado antes de solicitar outra geração.',ACCESS_DENIED:'Sua conta não tem permissão para gerar nesta empresa.'};
 function explain(e){return errors[e.message]||'Não foi possível concluir esta ação. Confira sua conexão e tente novamente.';}
 function setStatus(text){$('ai-status').textContent=text;}
 async function refreshStatus(){
@@ -92,7 +92,26 @@ async function recoverItem(item){
   else{item.requestId=null;await saveCampaign();setStatus('Não há imagem concluída para esta solicitação. Uma nova tentativa precisará de uma nova aprovação.');}
  }catch(e){setStatus(explain(e));}finally{busy=false;render();}
 }
-$('ai-mode').onchange=()=>{$('ai-reference-field').hidden=$('ai-mode').value!=='reference';$('ai-reference').required=$('ai-mode').value==='reference';};
+$('ai-reference').onchange=()=>{referenceFile=null;referencePathCache='';if(referencePreview)URL.revokeObjectURL(referencePreview);
+ let img=$('ai-reference-preview');if(!img){img=element('img');img.id='ai-reference-preview';img.style.cssText='display:block;max-width:240px;max-height:240px;object-fit:contain;margin-top:12px';$('ai-reference-field').append(img);}
+ const file=$('ai-reference').files[0];img.hidden=!file;if(file){referencePreview=URL.createObjectURL(file);img.src=referencePreview;img.alt='Imagem de referência selecionada';}
+};
+async function uploadReference(){
+ const file=$('ai-reference').files[0];if(!file||!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>3_000_000)throw new Error('INVALID_REFERENCE');
+ if(referenceFile===file&&referencePathCache)return referencePathCache;
+ const f=form('upload-reference');f.set('reference',file);const result=await cloud.ai(f);referenceFile=file;referencePathCache=result.path;return result.path;
+}
+$('ai-describe').onclick=async()=>{
+ if(busy)return;
+ if(!enabled){setStatus('Atualize a disponibilidade da IA antes de solicitar a análise.');return;}
+ if(!$('ai-reference').files[0]){setStatus('Selecione a imagem de referência primeiro.');return;}
+ if(!confirm('Analisar esta imagem envia a referência à OpenAI e usa seus créditos da API. Limite de 1 análise por dia, separado do limite de imagens. Continuar?'))return;
+ if($('ai-brief').value.trim()&&!confirm('Substituir a descrição atual pela sugestão da imagem?'))return;
+ busy=true;$('ai-describe').disabled=true;$('ai-plan').disabled=true;$('ai-reference').disabled=true;setStatus('Analisando a imagem para sugerir a descrição…');
+ try{const path=await uploadReference(),f=form('describe-reference');f.set('referencePath',path);f.set('requestId',crypto.randomUUID());f.set('consent','true');const result=await cloud.ai(f);$('ai-brief').value=result.description;setStatus('Descrição sugerida pela imagem. Revise o texto antes de salvar o planejamento. Nenhuma arte foi gerada.');}
+ catch(e){setStatus(explain(e));}finally{busy=false;$('ai-describe').disabled=false;$('ai-plan').disabled=false;$('ai-reference').disabled=false;}
+};
+$('ai-mode').onchange=()=>{$('ai-reference-field').hidden=$('ai-mode').value!=='reference';$('ai-describe-field').hidden=$('ai-mode').value!=='reference';$('ai-reference').required=$('ai-mode').value==='reference';};
 $('ai-form').onsubmit=async event=>{
  event.preventDefault();if(busy)return;busy=true;$('ai-plan').disabled=true;setStatus('Preparando planejamento…');
  try{
@@ -100,8 +119,7 @@ $('ai-form').onsubmit=async event=>{
   const services=[...document.querySelectorAll('input[name=ai-service]:checked')].map(e=>e.value);
   if(!services.length)throw new Error('INVALID_PLAN');
   if(mode==='reference'){
-   const file=$('ai-reference').files[0];if(!file||!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>3_000_000)throw new Error('INVALID_REFERENCE');
-   const f=form('upload-reference');f.set('reference',file);referencePath=(await cloud.ai(f)).path;
+   referencePath=await uploadReference();
   }
   const month=$('ai-month').value;
   const items=planCampaign({mode,month,count:Number($('ai-count').value),services,brief:$('ai-brief').value,referencePath,format:$('ai-format').value});
