@@ -20,3 +20,5 @@ test('publishing uses the server account and saved caption and blocks duplicates
 });
 test('ambiguous publishing outcomes are recorded and never retried automatically',async()=>{const h=harness({timeout:true});assert.equal((await h.run()).data.error,'SOCIAL_RESULT_UNKNOWN');assert.ok(h.calls.some(c=>c.update?.status==='unknown'));assert.equal(h.calls.filter(c=>c.options?.method==='POST').length,1);});
 test('JPEG dimensions reject disguised uploads',()=>{assert.equal(jpegDimensions(new TextEncoder().encode('<svg/>')),null);});
+
+test('social status validates the key through a read-only provider request',async()=>{const h=harness();h.form.set('action','social-status');const r=await h.run();assert.equal(r.data.configured,true);assert.equal(r.data.accessVerified,true);assert.equal(h.calls.filter(c=>c.options?.method==='POST').length,0);assert.equal(h.calls.filter(c=>c.update).length,0);});

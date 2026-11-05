@@ -8,7 +8,11 @@ export async function handleSocial({workspace,user,userClient,admin,form,env,fet
  const account=await userClient.from('sm_social_accounts').select('account_id,username,enabled').eq('workspace_id',workspace).maybeSingle();
  if(account.error)return {status:503,data:{error:'SOCIAL_DATABASE_UNAVAILABLE'}};
  const ready=Boolean(key&&account.data?.enabled);
- if(action==='social-status')return {status:200,data:{configured:ready,username:account.data?.username||null,missingKey:!key}};
+ if(action==='social-status'){
+  let accessVerified=false;
+  if(ready)try{const url=new URL('https://connectors.windsor.ai/instagram/actions');url.searchParams.set('api_key',key);const r=await fetcher(url,{signal:AbortSignal.timeout(15000)});if(r.ok){const actions=await r.json();accessVerified=Array.isArray(actions)&&actions.some(a=>a.id==='create_image_post');}}catch{}
+  return {status:200,data:{configured:ready&&accessVerified,accessVerified,username:account.data?.username||null,missingKey:!key,accessError:ready&&!accessVerified}};
+ }
  if(!ready)return {status:503,data:{error:'SOCIAL_NOT_CONFIGURED'}};
  if(form.get('publishConsent')!=='true')return {status:400,data:{error:'SOCIAL_CONSENT_REQUIRED'}};
  const source=form.get('sourceId'),file=form.get('finalImage');
