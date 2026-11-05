@@ -133,3 +133,12 @@ $('ai-refresh').onclick=refreshStatus;
 $('ai-month').value=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'}).slice(0,7);
 document.querySelector('[data-page=ai]').addEventListener('click',()=>{renderCampaignList();refreshStatus();});
 renderCampaignList();refreshStatus();
+
+$('photoToAI').onclick=()=>{
+ if(busy)return;
+ const file=$('photoFile').files[0];
+ document.querySelector('[data-page=ai]').click();$('ai-mode').value='reference';$('ai-mode').onchange();
+ if(file){const transfer=new DataTransfer();transfer.items.add(file);$('ai-reference').files=transfer.files;$('ai-reference').onchange();setStatus('Referência selecionada. Escreva a descrição ou use Sugerir descrição pela imagem; prepare a campanha e clique em Gerar imagem no item.');}
+ else setStatus('Selecione uma referência, descreva a campanha e prepare o planejamento. Depois clique em Gerar imagem no item.');
+ $('ai-reference-field').scrollIntoView({behavior:'smooth',block:'center'});
+};
