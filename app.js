@@ -1,4 +1,4 @@
-const OFFICIAL_LOGO='assets/logo-eco-transparent.png?v=1.1.1';
+const OFFICIAL_LOGO='assets/logo-eco-transparent.png?v=1.1.2';
 const $=id=>document.getElementById(id), read=(k,f)=>window.StudioCloud.read(k,f),write=(k,v)=>window.StudioCloud.write(k,v);
 let brand=read('sm_brand',{name:window.StudioCloud.companyName,phone:'',color:'#0876a8',accent:'#80b53e',logo:OFFICIAL_LOGO}),posts=read('sm_posts',[]),projects=read('sm_projects',[]);let photoImage=null,videoURL=null,videoLoop=0,recorder=null,recordStream=null,audioCtx=null,videoClips=[],clipIndex=0,exporting=false;
 if(/eco\s*ensaboare/i.test(brand.name)||!brand.logo||brand.logo==='assets/logo-eco.png')brand.logo=OFFICIAL_LOGO;
