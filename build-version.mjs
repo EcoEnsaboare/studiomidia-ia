@@ -1,0 +1,13 @@
+import { mkdirSync, cpSync, readFileSync, writeFileSync } from 'node:fs';
+const version = '1.0.1';
+const commit = (process.env.COMMIT_REF || 'local').slice(0, 7);
+const deploy = (process.env.DEPLOY_ID || 'local').slice(-8);
+const date = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
+const escape = value => value.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const label = 'v' + version + ' · ' + commit + ' · ' + deploy;
+const details = 'Publicado em ' + date + ' (Brasília) | Commit ' + commit + ' | Deploy ' + deploy;
+mkdirSync('dist', { recursive: true });
+for (const path of ['app.js', 'style.css', 'assets']) cpSync(path, 'dist/' + path, { recursive: true });
+const html = readFileSync('index.html', 'utf8').replace('<!-- STUDIO_BUILD -->', '<span id="app-version" title="' + escape(details) + '" aria-label="' + escape(details) + '">' + escape(label) + '</span>');
+writeFileSync('dist/index.html', html);
+console.log('StudioMídia ' + label);
