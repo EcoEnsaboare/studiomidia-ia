@@ -14,8 +14,9 @@ writeFileSync('dist/index.html', html);
 console.log('StudioMídia ' + label);
 
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+const projectConfig = JSON.parse(readFileSync('supabase.public.json', 'utf8'));
+const supabaseUrl = process.env.SUPABASE_URL || projectConfig.supabaseUrl;
+const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || projectConfig.supabaseKey;
 if (!supabaseUrl || !supabaseKey || new URL(supabaseUrl).protocol !== 'https:') throw new Error('Configure SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY no Netlify.');
 let publicKey = supabaseKey.startsWith('sb_publishable_');
 if (!publicKey && supabaseKey.split('.').length === 3) {
