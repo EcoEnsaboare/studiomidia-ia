@@ -57,3 +57,7 @@ test('status identifies missing configuration without returning credentials',asy
  const h=harness({ready:false});const request=new Request('https://function.example.test?workspace='+W,{headers:{Authorization:'Bearer test-token'}});
  const result=await h.handler(request),data=await result.json();assert.deepEqual(data.missingConfiguration,['OPENAI_API_KEY']);assert.equal(data.enabled,false);assert.ok(!JSON.stringify(data).includes('TEST_KEY'));assert.equal(h.calls.provider.length,0);
 });
+
+test('image generation optionally analyzes the new image for a separate caption after saving the image',async()=>{
+ const h=harness();const r=await h.handler(req({withCaption:'true'}));assert.equal(r.status,200);const data=await r.json();assert.ok(data.path);assert.ok(data.caption);assert.equal(h.calls.provider.length,2);const captionCall=h.calls.provider[1];assert.ok(captionCall.url.endsWith('/responses'));const payload=JSON.parse(captionCall.body);assert.equal(payload.store,false);assert.ok(payload.input[0].content[1].image_url.startsWith('data:image/png;base64,'));assert.ok(h.calls.updates.some(u=>u.caption));
+});

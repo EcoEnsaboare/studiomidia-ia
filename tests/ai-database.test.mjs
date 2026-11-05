@@ -10,6 +10,7 @@ test('AI database prevents self-activation, duplicates, cross-tenant calls and e
   await db.exec(readFileSync(new URL('../database/workspaces.sql',import.meta.url),'utf8'));
   await db.exec(readFileSync(new URL('../database/ai_generation.sql',import.meta.url),'utf8'));
   await db.exec(readFileSync(new URL('../database/ai_briefs.sql',import.meta.url),'utf8'));
+  await db.exec(readFileSync(new URL('../database/ai_captions.sql',import.meta.url),'utf8'));
   await db.exec(`set role authenticated;set request.jwt.claim.sub='${A}';`);
   const workspace=(await db.query("select public.sm_ensure_workspace('A') as id")).rows[0].id;
   await assert.rejects(()=>db.query('select public.sm_ai_reserve($1,$2,$3)',[workspace,A,crypto.randomUUID()]),/permission denied/);

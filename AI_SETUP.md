@@ -31,3 +31,8 @@ Geração de imagens, não de vídeo. Legendas desta tela são modelos locais ed
 
 ## Descrição pela referência (v1.2.2)
 Botão explícito com confirmação de custo; Responses API gpt-4.1-mini, store=false, saída limitada a 450 tokens. Limite separado de 1 análise/dia por empresa (inclusive falhas), reservado atomicamente antes da API. A análise não consome a cota de imagens. Não executada automaticamente ao carregar um arquivo; o texto é editável antes de salvar. Não foi feito teste pago de análise nesta publicação.
+
+## Fluxo principal v1.3.0
+Ideia ou modelo → geração explícita de 1/2/4 opções (dentro da cota) → seleção visual → legenda da imagem efetivamente gerada → dia/hora de Brasília. Cada geração solicitada com withCaption=true inclui uma chamada adicional à Responses API para legenda; consentimento é mostrado antes da ação. Falha na legenda preserva a imagem e permite texto manual. A legenda é recuperável pelo mesmo requestId. Apenas imagens selecionadas entram como prepared no calendário; esse estado não representa publicação ou agendamento externo. Sem integração Meta nesta versão.
+
+Revisão de privacidade: a chamada de legenda envia apenas a cena gerada, sem consultar nem enviar os contatos da marca. O navegador acrescenta os contatos à legenda depois. Atualização preparada em branch, aguardando aprovação após bloqueio da revisão automática. Publicação direta Instagram ainda pendente de integração.
