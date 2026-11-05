@@ -13,3 +13,12 @@
 .cloud-toolbar strong{font-size:13px}.cloud-toolbar small{display:block;font-size:11px;color:#6b8090;margin-top:3px}.cloud-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .cloud-controls span{font-size:11px;color:#3d6b46}.cloud-controls button{border:1px solid #cbdce4;border-radius:7px;padding:7px 10px;background:white;color:#23485e;font-size:12px}
 @media(max-width:600px){.cloud-toolbar{align-items:flex-start;flex-direction:column;gap:10px}.auth-card{padding:25px}.cloud-controls{gap:8px}}
+
+/* Official transparent brand asset. Keep its original proportions. */
+.system-logo{display:block;width:104px;height:64px;object-fit:contain;flex-shrink:0}
+.brand{flex-wrap:wrap}
+.auth-card .system-logo{width:162px;height:94px}
+.heroVisual{background:transparent;box-shadow:none;transform:none}
+.heroVisual img{width:100%;max-height:200px}
+.brandPreview img,.account img{object-fit:contain;background:transparent}
+@media(max-width:900px){aside .system-logo{width:40px;height:30px}.brand{padding-left:0;padding-right:0}}
