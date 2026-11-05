@@ -1,10 +1,10 @@
-# Etapa 1 em preparação — Login e nuvem
+# StudioMídia IA — v1.2.0
 
-Esta branch contém a integração Supabase da versão 1.1.0. Ainda não está ativada em produção. Consulte [AUTH_SETUP.md](AUTH_SETUP.md) para configuração e validação de aceite.
+Aplicativo da Eco Ensaboare hospedado no Netlify com login e persistência Supabase.
 
-Testes locais: `npm test` (inclui isolamento entre empresas em PostgreSQL/PGlite). Build: `npm run build`, com as duas variáveis públicas configuradas. Dependências têm versões fixas e lockfile.
+A área Criar com IA está integrada ao servidor e aguarda chave de API e aprovação de uso pago. Há modos por ideia e referência e planejamento mensal. Não confundir o editor Montar arte (composição de foto existente) com a geração original de imagens. Consulte [AI_SETUP.md](AI_SETUP.md) para ativação e limites.
 
----
+Verificação: `npm ci`, `npm test` e `npm run build`. Os 16 testes incluem isolamento, quota, idempotência e requisições simuladas de geração/edição; nenhum teste paga a API.
 
 ## Histórico do piloto local
 

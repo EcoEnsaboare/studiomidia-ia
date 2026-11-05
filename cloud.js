@@ -41,6 +41,20 @@ async function openWorkspace(session) {
     await readState();
     window.StudioCloud = {
       companyName:company,
+      workspaceId:workspace,
+      flush:()=>queue,
+      async ai(form){
+        form.set('workspace',workspace);
+        const {data,error}=await client.functions.invoke('generate-image',{body:form});
+        if(error){let code='CONNECTION_FAILED';try{const body=await error.context?.json();code=body?.error||code;}catch{}throw new Error(code);}
+        return data;
+      },
+      async aiStatus(){
+        const {data:sessionData}=await client.auth.getSession();
+        const response=await fetch(window.STUDIO_CONFIG.supabaseUrl+'/functions/v1/generate-image?workspace='+encodeURIComponent(workspace),{headers:{apikey:window.STUDIO_CONFIG.supabaseKey,Authorization:'Bearer '+sessionData.session?.access_token},cache:'no-store'});
+        if(!response.ok)throw new Error('STATUS_UNAVAILABLE');
+        return response.json();
+      },
       read:(key,fallback)=>clone(state[key] ?? fallback),
       async write(key,value) {
         if(failed) { alert('Recarregue a página antes de continuar a edição.'); return false; }
@@ -64,6 +78,8 @@ async function openWorkspace(session) {
     if(!started) {
       const script=document.createElement('script'); script.src='app.js';
       await new Promise((resolve,reject)=>{ script.onload=resolve; script.onerror=reject; document.body.append(script); });
+      const aiScript=document.createElement('script');aiScript.type='module';aiScript.src='ai.js';
+      await new Promise((resolve,reject)=>{aiScript.onload=resolve;aiScript.onerror=reject;document.body.append(aiScript);});
       started=true;
     }
     byId('session-email').textContent=session.user.email;
@@ -137,3 +153,4 @@ try {
   const {data,error}=await client.auth.getSession(); if(error) throw error;
   await openWorkspace(data.session);
 } catch {message('O acesso à nuvem ainda não está disponível. Tente novamente mais tarde.');byId('auth-submit').disabled=true;}
+

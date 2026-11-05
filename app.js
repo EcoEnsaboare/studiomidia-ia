@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id), read=(k,f)=>window.StudioCloud.read(k,f
 let brand=read('sm_brand',{name:window.StudioCloud.companyName,phone:'',color:'#0876a8',accent:'#80b53e',logo:OFFICIAL_LOGO}),posts=read('sm_posts',[]),projects=read('sm_projects',[]);let photoImage=null,videoURL=null,videoLoop=0,recorder=null,recordStream=null,audioCtx=null,videoClips=[],clipIndex=0,exporting=false;
 if(/eco\s*ensaboare/i.test(brand.name)||!brand.logo||brand.logo==='assets/logo-eco.png')brand.logo=OFFICIAL_LOGO;
 const logoImg=new Image();logoImg.onload=()=>{drawPhoto();drawVideo()};logoImg.src=brand.logo;
-function navigate(page){document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===page));document.querySelectorAll('nav button').forEach(e=>e.classList.toggle('active',e.dataset.page===page));$('heading').textContent=({home:'Bem-vindo ao seu estúdio',photos:'Crie artes para sua marca',videos:'Produza seus Reels',ideas:'Ideias e legendas',calendar:'Planeje suas publicações',library:'Sua biblioteca criativa',brand:'Identidade da sua empresa'})[page];window.scrollTo(0,0);if(page==='library')renderProjects();if(page==='calendar')renderPosts()}
+function navigate(page){document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===page));document.querySelectorAll('nav button').forEach(e=>e.classList.toggle('active',e.dataset.page===page));$('heading').textContent=({home:'Bem-vindo ao seu estúdio',ai:'Crie imagens novas com IA',photos:'Crie artes para sua marca',videos:'Produza seus Reels',ideas:'Ideias e legendas',calendar:'Planeje suas publicações',library:'Sua biblioteca criativa',brand:'Identidade da sua empresa'})[page];window.scrollTo(0,0);if(page==='library')renderProjects();if(page==='calendar')renderPosts()}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>navigate(b.dataset.page));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>navigate(b.dataset.go));
 function updateBrand(){if(/eco\s*ensaboare/i.test(brand.name))brand.logo=OFFICIAL_LOGO;for(const id of ['headerLogo','brandLogo'])$(id).src=brand.logo;$('headerName').textContent=brand.name;$('brandDisplay').textContent=brand.name;$('companyName').value=brand.name;$('companyPhone').value=brand.phone;$('companyColor').value=brand.color;$('companyAccent').value=brand.accent;logoImg.src=brand.logo}
 $('saveBrand').onclick=async()=>{brand={...brand,name:$('companyName').value.trim()||'Minha Empresa',phone:$('companyPhone').value.trim(),color:$('companyColor').value,accent:$('companyAccent').value};if(await write('sm_brand',brand)){updateBrand();alert('Identidade visual salva na nuvem!')}};$('companyLogo').onchange=async e=>{const f=e.target.files[0];if(!f)return;const data=await fileData(f);if(data.length>2e6){alert('Use um logo de até 1,5 MB.');return}brand.logo=data;if(await write('sm_brand',brand))updateBrand()};
@@ -42,3 +42,13 @@ $('ideaToCalendar').onclick=()=>{if(!$('ideaResult').value.trim()){alert('Crie u
 window.addEventListener('studio-save-error',()=>{document.querySelectorAll('.page input,.page select,.page textarea,.page button').forEach(el=>el.disabled=true);});
 
 function drawLogo(ctx,img,x,y,maxWidth,maxHeight){const scale=Math.min(maxWidth/img.naturalWidth,maxHeight/img.naturalHeight);ctx.drawImage(img,x,y,img.naturalWidth*scale,img.naturalHeight*scale)}
+
+
+window.StudioEditor={useGeneratedImage(url,title,caption,format){
+ const img=new Image();img.crossOrigin='anonymous';
+ img.onload=()=>{photoImage=img;$('photoTitle').value=title;$('photoSubtitle').value=caption;$('photoFormat').value=format;drawPhoto();navigate('photos');};
+ img.onerror=()=>alert('Não foi possível carregar a imagem. Volte à campanha e tente abrir novamente.');img.src=url;
+}};
+window.addEventListener('studio-projects-updated',()=>{projects=read('sm_projects',[]);updateCounts();if($('library').classList.contains('active'))renderProjects();});
+
+window.addEventListener('studio-posts-updated',()=>{posts=read('sm_posts',[]);updateCounts();if($('calendar').classList.contains('active'))renderPosts();});

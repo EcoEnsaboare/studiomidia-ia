@@ -1,6 +1,6 @@
 import { build } from 'esbuild';
 import { mkdirSync, cpSync, readFileSync, writeFileSync } from 'node:fs';
-const version = '1.1.2';
+const version = '1.2.0';
 const commit = (process.env.COMMIT_REF || 'local').slice(0, 7);
 const deploy = (process.env.DEPLOY_ID || 'local').slice(-8);
 const date = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
@@ -26,3 +26,6 @@ if (!publicKey) throw new Error('Use apenas uma chave publicável/anon. Chaves s
 writeFileSync('dist/config.js', 'window.STUDIO_CONFIG=' + JSON.stringify({supabaseUrl, supabaseKey}) + ';');
 
 await build({entryPoints:['cloud.js'],bundle:true,format:'esm',platform:'browser',target:'es2022',outfile:'dist/cloud.js',minify:true});
+
+
+await build({entryPoints:['ai.js'],bundle:true,format:'esm',platform:'browser',target:'es2022',outfile:'dist/ai.js',minify:true});
